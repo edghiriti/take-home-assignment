@@ -14,6 +14,9 @@ StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddSingleton<IWebhookQueue, WebhookQueue>();
+builder.Services.AddHostedService<WebhookProcessorWorker>();
+
 builder.Services.AddScoped<StartOnboardingHandler>();
 builder.Services.AddScoped<PaymentSucceededHandler>();
 builder.Services.AddScoped<SessionExpiredHandler>();

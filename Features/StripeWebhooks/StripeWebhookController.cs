@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Stripe;
-using Stripe.Checkout;
 using StripeOnboardingSlice.Infrastructure;
 
 namespace StripeOnboardingSlice.Features.StripeWebhooks;
@@ -10,19 +8,17 @@ namespace StripeOnboardingSlice.Features.StripeWebhooks;
 [Route("api/webhooks/stripe")]
 public class StripeWebhookController : ControllerBase
 {
-    private readonly StripeOptions _options;
-    private readonly PaymentSucceededHandler _paymentSucceededHandler;
-    private readonly SessionExpiredHandler _sessionExpiredHandler;
+    private readonly IWebhookQueue _queue;
+    private readonly string _webhookSecret;
 
-    public StripeWebhookController(IOptions<StripeOptions> options, PaymentSucceededHandler paymentSucceededHandler, SessionExpiredHandler sessionExpiredHandler)
+    public StripeWebhookController(IWebhookQueue queue, IConfiguration config)
     {
-        _options = options.Value;
-        _paymentSucceededHandler = paymentSucceededHandler;
-        _sessionExpiredHandler = sessionExpiredHandler;
+        _queue = queue;
+        _webhookSecret = config["Stripe:WebhookSecret"];
     }
 
     [HttpPost]
-    public async Task<IActionResult> HandleWebhook(CancellationToken cancellationToken)
+    public async Task<IActionResult> HandleWebhook()
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
 
@@ -31,25 +27,16 @@ public class StripeWebhookController : ControllerBase
             var stripeEvent = EventUtility.ConstructEvent(
                 json,
                 Request.Headers["Stripe-Signature"],
-                _options.WebhookSecret
+                _webhookSecret
             );
 
-            if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
-            {
-                var session = stripeEvent.Data.Object as Stripe.Checkout.Session;
-                await _paymentSucceededHandler.HandleAsync(session, stripeEvent.Id, CancellationToken.None);
-            }
-            else if (stripeEvent.Type == EventTypes.CheckoutSessionExpired)
-            {
-                var session = stripeEvent.Data.Object as Stripe.Checkout.Session;
-                await _sessionExpiredHandler.HandleAsync(session, stripeEvent.Id, CancellationToken.None);
-            }
+            var message = new WebhookMessage(stripeEvent, stripeEvent.Id);
+            await _queue.QueueWebhookAsync(message, CancellationToken.None);
 
             return Ok();
         }
-        catch (StripeException e)
+        catch (StripeException)
         {
-            Console.WriteLine($"[STRIPE WEBHOOK ERROR]: {e.Message}");
             return BadRequest();
         }
     }

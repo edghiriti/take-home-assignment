@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST Onboarding Test</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f7f9; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #635bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #a3acb9; }
+        .loader { display: none; margin-top: 10px; text-align: center; color: #635bff; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>TEST Onboarding</h2>
+        <p>Enter your details to start the subscription.</p>
+        <input type="text" id="companyName" placeholder="Company Name" value="Acme Corp">
+        <input type="email" id="adminEmail" placeholder="Admin Email" value="admin@acme.com">
+        <button id="btnPay">Subscribe with Stripe</button>
+        <div id="loader" class="loader">Redirecting to Stripe...</div>
+    </div>
+
+    <script>
+        document.getElementById('btnPay').addEventListener('click', async () => {
+            const btn = document.getElementById('btnPay');
+            const loader = document.getElementById('loader');
+            
+            const requestBody = {
+                companyName: document.getElementById('companyName').value,
+                adminEmail: document.getElementById('adminEmail').value
+            };
+
+            btn.disabled = true;
+            loader.style.display = 'block';
+
+            try {
+                // Change this URL if your port is different!
+                const response = await fetch('http://localhost:5001/api/onboarding/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const data = await response.json(); // This parses the JSON into a real JS object
+                    window.location.href = data.checkoutUrl; // This grabs only the URL string
+                } else {
+                    alert('Error starting onboarding: ' + response.statusText);
+                    btn.disabled = false;
+                    loader.style.display = 'none';
+                }
+            } catch (err) {
+                alert('Could not connect to API. Is your C# app running?');
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

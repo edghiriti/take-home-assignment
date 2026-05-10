@@ -34,18 +34,26 @@ public class WebhookProcessorWorker : BackgroundService
             {
                 var message = await _queue.DequeueAsync(stoppingToken);
 
+                if (message == null || string.IsNullOrWhiteSpace(message.RawJson))
+                {
+                    _logger.LogWarning("Received a Poison Pill message from SQS (missing RawJson). Skipping.");
+                    continue;
+                }
+
+                var stripeEvent = Stripe.EventUtility.ParseEvent(message.RawJson);
+
                 using var scope = _scopeFactory.CreateScope();
                 
-                if (message.StripeEvent.Type == EventTypes.CheckoutSessionCompleted)
+                if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
                 {
                     var successHandler = scope.ServiceProvider.GetRequiredService<PaymentSucceededHandler>();
-                    var session = message.StripeEvent.Data.Object as Session;
+                    var session = stripeEvent.Data.Object as Session;
                     await successHandler.HandleAsync(session, message.EventId, stoppingToken);
                 }
-                else if (message.StripeEvent.Type == EventTypes.CheckoutSessionExpired)
+                else if (stripeEvent.Type == EventTypes.CheckoutSessionExpired)
                 {
                     var expiredHandler = scope.ServiceProvider.GetRequiredService<SessionExpiredHandler>();
-                    var session = message.StripeEvent.Data.Object as Session;
+                    var session = stripeEvent.Data.Object as Session;
                     await expiredHandler.HandleAsync(session, message.EventId, stoppingToken);
                 }
             }

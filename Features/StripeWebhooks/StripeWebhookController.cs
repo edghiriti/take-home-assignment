@@ -30,7 +30,7 @@ public class StripeWebhookController : ControllerBase
                 _webhookSecret
             );
 
-            var message = new WebhookMessage(stripeEvent, stripeEvent.Id);
+            var message = new WebhookMessage(json, stripeEvent.Id);
             await _queue.QueueWebhookAsync(message, CancellationToken.None);
 
             return Ok();

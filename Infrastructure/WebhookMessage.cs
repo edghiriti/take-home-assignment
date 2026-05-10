@@ -1,3 +1,3 @@
 ﻿using Stripe;
 
-public record WebhookMessage(Event StripeEvent, string EventId);
+public record WebhookMessage(string RawJson, string EventId);

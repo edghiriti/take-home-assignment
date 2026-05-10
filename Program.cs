@@ -1,3 +1,5 @@
+using Amazon.Runtime;
+using Amazon.SQS;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
@@ -16,6 +18,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddSingleton<IWebhookQueue, WebhookQueue>();
 builder.Services.AddHostedService<WebhookProcessorWorker>();
+var awsOptions = new BasicAWSCredentials(
+    builder.Configuration["AWS:AccessKey"],
+    builder.Configuration["AWS:SecretKey"]
+);
+builder.Services.AddSingleton<IAmazonSQS>(new AmazonSQSClient(awsOptions, Amazon.RegionEndpoint.EUNorth1));
+
+builder.Services.AddSingleton<IWebhookQueue, SqsWebhookQueue>();
+
+
 
 builder.Services.AddScoped<StartOnboardingHandler>();
 builder.Services.AddScoped<PaymentSucceededHandler>();
@@ -24,6 +35,7 @@ builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 builder.Services.AddScoped<IEmailService, MockConsoleEmailService>();
 builder.Services.AddControllers();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

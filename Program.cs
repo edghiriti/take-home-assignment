@@ -1,3 +1,5 @@
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
 using Amazon.SQS;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +24,8 @@ var awsOptions = new BasicAWSCredentials(
     builder.Configuration["AWS:AccessKey"],
     builder.Configuration["AWS:SecretKey"]
 );
+builder.Services.AddSingleton<IAmazonDynamoDB>(new AmazonDynamoDBClient(awsOptions, Amazon.RegionEndpoint.EUNorth1));
+builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 builder.Services.AddSingleton<IAmazonSQS>(new AmazonSQSClient(awsOptions, Amazon.RegionEndpoint.EUNorth1));
 
 builder.Services.AddSingleton<IWebhookQueue, SqsWebhookQueue>();

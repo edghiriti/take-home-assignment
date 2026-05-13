@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Stripe.Checkout;
 using StripeOnboardingSlice.Data;
+using StripeOnboardingSlice.Enums;
 using StripeOnboardingSlice.Infrastructure;
 
 namespace StripeOnboardingSlice.Features.StripeWebhooks;
@@ -47,9 +48,9 @@ public class SessionExpiredHandler
             var company = await _dbContext.Companies
                 .FirstOrDefaultAsync(c => c.Id == companyId, cancellationToken);
 
-            if (company != null && company.Status == "PendingPayment")
+            if (company != null && company.Status == CompanyStatus.PendingPayment)
             {
-                company.Status = "Abandoned";
+                company.Status = CompanyStatus.Abandoned;
 
                 companyEmail = company.AdminEmail;
                 companyName = company.Name;

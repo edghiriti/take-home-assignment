@@ -13,5 +13,9 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<ProcessedWebhook>()
             .HasKey(w => w.EventId);
+
+        modelBuilder.Entity<Company>()
+            .Property(c => c.Status)
+            .HasConversion<string>();
     }
 }

@@ -1,14 +1,17 @@
-﻿using Stripe.Checkout;
+﻿using Microsoft.Extensions.Options;
+using Stripe.Checkout;
 
 namespace StripeOnboardingSlice.Infrastructure;
 
 public class StripePaymentService : IPaymentService
 {
     private readonly SessionService _sessionService;
+    private readonly StripeOptions _options;
 
-    public StripePaymentService(SessionService sessionService)
+    public StripePaymentService(SessionService sessionService, IOptions<StripeOptions> options)
     {
         _sessionService = sessionService;
+        _options = options.Value;
     }
 
     public async Task<string> CreateCheckoutSessionAsync(string clientReferenceId, string customerEmail, CancellationToken cancellationToken)
@@ -23,7 +26,7 @@ public class StripePaymentService : IPaymentService
                 {
                     PriceData = new SessionLineItemPriceDataOptions
                     {
-                        UnitAmount = 5000,
+                        UnitAmount = _options.DefaultPriceAmount,
                         Currency = "usd",
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
@@ -34,8 +37,8 @@ public class StripePaymentService : IPaymentService
                 },
             },
             Mode = "payment",
-            SuccessUrl = "http://localhost:5001/success",
-            CancelUrl = "http://localhost:5001/cancel",
+            SuccessUrl = _options.SuccessUrl,
+            CancelUrl = _options.CancelUrl,
             ClientReferenceId = clientReferenceId
         };
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Stripe.Checkout;
 using StripeOnboardingSlice.Data;
+using StripeOnboardingSlice.Enums;
 using StripeOnboardingSlice.Infrastructure;
 
 namespace StripeOnboardingSlice.Features.StripeWebhooks;
@@ -49,7 +50,7 @@ public class PaymentSucceededHandler
 
             if (company != null)
             {
-                company.Status = "Active";
+                company.Status = CompanyStatus.Active;
 
                 companyEmail = company.AdminEmail;
                 companyName = company.Name;

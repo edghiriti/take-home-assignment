@@ -1,4 +1,5 @@
 using StripeOnboardingSlice.Data;
+using StripeOnboardingSlice.Enums;
 using StripeOnboardingSlice.Infrastructure;
 
 namespace StripeOnboardingSlice.Features.StartOnboarding;
@@ -21,7 +22,7 @@ public class StartOnboardingHandler
             Id = Guid.NewGuid(),
             Name = request.CompanyName,
             AdminEmail = request.AdminEmail,
-            Status = "PendingPayment"
+            Status = CompanyStatus.PendingPayment
         };
 
         _dbContext.Companies.Add(company);
